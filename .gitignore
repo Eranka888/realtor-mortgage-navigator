@@ -1,0 +1,39 @@
+# Виртуальное окружение
+.venv/
+venv/
+
+# Кэши Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Конфигурация и секреты
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Логи и локальные файлы
+*.log
+.DS_Store
+
+# Локальная база SQLite
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-*
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Кэши инструментов и отчеты покрытия
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Локальные настройки редакторов
+.vscode/
+.idea/
