@@ -16,13 +16,14 @@ from app import (
     initialize_form_state,
     initialize_scenario_service,
     load_scenario_into_form,
+    render_summary_metrics,
     render_scenarios_section,
     scenario_card_data,
     set_down_payment_default_for_unit,
     start_new_scenario,
     to_csv,
 )
-from mortgage_calc import ANNUITY, DIFFERENTIATED, MortgageInput
+from mortgage_calc import ANNUITY, DIFFERENTIATED, MortgageInput, calculate_mortgage
 from scenario_models import MortgageScenario
 from scenario_service import ScenarioComparison, ScenarioStorageError
 
@@ -71,6 +72,54 @@ class NumberFormattingTests(unittest.TestCase):
             display_schedule.loc[0, "Основной долг"], "12.000.000,25 ₽"
         )
         self.assertEqual(schedule.loc[0, "Платёж"], 17_000_000.5)
+
+
+class MetricColumnRecorder:
+    def __init__(self) -> None:
+        self.metrics: list[tuple[str, str]] = []
+        self.captions: list[str] = []
+
+    def metric(self, label: str, value: str) -> None:
+        self.metrics.append((label, value))
+
+    def caption(self, text: str) -> None:
+        self.captions.append(text)
+
+
+class SummaryMetricsRecorder:
+    def __init__(self) -> None:
+        self.rows: list[list[MetricColumnRecorder]] = []
+
+    def columns(self, count: int) -> list[MetricColumnRecorder]:
+        row = [MetricColumnRecorder() for _ in range(count)]
+        self.rows.append(row)
+        return row
+
+
+class SummaryMetricsLayoutTests(unittest.TestCase):
+    def test_summary_metrics_use_three_cards_then_two_cards(self) -> None:
+        result = calculate_mortgage(make_mortgage_input())
+        recorder = SummaryMetricsRecorder()
+
+        with patch("app.st", recorder):
+            render_summary_metrics(result)
+
+        self.assertEqual([len(row) for row in recorder.rows], [3, 2])
+        self.assertEqual(
+            [
+                label
+                for row in recorder.rows
+                for column in row
+                for label, _ in column.metrics
+            ],
+            [
+                "Ежемесячный платёж",
+                "Сумма кредита",
+                "Общая сумма выплат",
+                "Переплата",
+                "Доля процентов",
+            ],
+        )
 
 
 def make_mortgage_input() -> MortgageInput:

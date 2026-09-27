@@ -197,6 +197,22 @@ def format_percent(value: float) -> str:
     return f"{format_number(value)} %"
 
 
+def render_summary_metrics(result: object) -> None:
+    first_row = st.columns(3)
+    first_row[0].metric("Ежемесячный платёж", format_money(result.monthly_payment_first))
+    if result.monthly_payment_last != result.monthly_payment_first:
+        first_row[0].caption(
+            f"от {format_money(result.monthly_payment_first)} до "
+            f"{format_money(result.monthly_payment_last)}"
+        )
+    first_row[1].metric("Сумма кредита", format_money(result.loan_amount))
+    first_row[2].metric("Общая сумма выплат", format_money(result.total_payment))
+
+    second_row = st.columns(2)
+    second_row[0].metric("Переплата", format_money(result.total_interest))
+    second_row[1].metric("Доля процентов", format_percent(result.interest_share_percent))
+
+
 def format_schedule_for_display(schedule: pd.DataFrame) -> pd.DataFrame:
     display_schedule = schedule.copy()
     for column in ("Платёж", "Основной долг", "Проценты", "Остаток долга"):
@@ -451,12 +467,12 @@ def render_scenarios_section(
 
 def main() -> None:
     st.set_page_config(
-        page_title="Ипотечный калькулятор",
+        page_title="Ипотечный навигатор риелтора",
         page_icon="🏠",
         layout="wide",
     )
 
-    st.title("Ипотечный калькулятор с дашбордом")
+    st.title("Ипотечный навигатор риелтора")
     public_demo = is_public_demo()
     render_demo_notice(public_demo)
     st.caption(
@@ -537,19 +553,7 @@ def main() -> None:
 
     st.subheader("Итоговые показатели")
 
-    metrics = st.columns(5)
-    metrics[0].metric("Ежемесячный платёж", format_money(result.monthly_payment_first))
-    if result.monthly_payment_last != result.monthly_payment_first:
-        metrics[0].caption(
-            f"от {format_money(result.monthly_payment_first)} до "
-            f"{format_money(result.monthly_payment_last)}"
-        )
-    metrics[1].metric("Сумма кредита", format_money(result.loan_amount))
-    metrics[2].metric("Общая сумма выплат", format_money(result.total_payment))
-    metrics[3].metric("Переплата по процентам", format_money(result.total_interest))
-    metrics[4].metric(
-        "Доля процентов в выплатах", format_percent(result.interest_share_percent)
-    )
+    render_summary_metrics(result)
 
     scenario_service, scenario_initialization_error = initialize_scenario_service(
         public_demo=public_demo,
